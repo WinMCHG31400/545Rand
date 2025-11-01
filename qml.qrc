@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>Qt.png</file>
+        <file>DelButton.qml</file>
+        <file>DelIconButton.qml</file>
+        <file>CScrollBar.qml</file>
+        <file>About.qml</file>
+        <file>545rand.png</file>
+        <file>545rand.ico</file>
+        <file>GMesenger.qml</file>
+        <file>545rand.svg</file>
+        <file>winmchg31400.jpg</file>
+    </qresource>
+</RCC>
