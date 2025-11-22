@@ -4,10 +4,11 @@ import QtQuick.Window
 import GFile
 import QtQuick.Dialogs
 import QtQuick.Controls.Basic
-
+import Qt5Compat.GraphicalEffects
+import Qt.labs.platform
 ApplicationWindow {
     id: window
-    flags: Qt.FramelessWindowHint|Qt.Window
+    flags: Qt.FramelessWindowHint|Qt.Window|(top_btn.checked?Qt.WindowStaysOnTopHint:0)
     visible:true
     width: 584
     height: 334
@@ -21,6 +22,7 @@ ApplicationWindow {
     property var nN_names:[]
     property var names:[]
     property var names_:[]
+    property bool start:true
     onClosing: file.save()
     Component.onCompleted:  {
         load()
@@ -29,14 +31,28 @@ ApplicationWindow {
         file.source="./setting.json"
         var data=JSON.parse(file.read())
         names=data.names
-        if(!data.tx) a2.checked=true
+        switch(data.tx){
+        case 1:
+            a2.checked=true
+            break
+        case 2:
+            a2.checked=true
+            break
+        case 3:
+            a3.checked=true
+            break
+        }
         nN.setValue(data.n)
+        a3.first=data.first
+        top_btn.checked=data.top
+        start=false
     }
 
     GMesenger{
         id:mesenge
         z:46578
-        width: parent.width-40
+        anchors.centerIn: parent
+        anchors.verticalCenterOffset: -130
         x:20
         y:20
         onFocusChanged: {
@@ -47,15 +63,21 @@ ApplicationWindow {
     GFile{
         id:file
         function output(){
-            source=getDesktop()+"/545output"+ Qt.formatDateTime(new Date(), "yy-mm-dd-hh-mm-ss")+".txt"
+            source=getDesktop()+"/545Rand-output-"+ Qt.formatDateTime(new Date(), "yy-mm-dd-hh-mm-ss")+".txt"
             write(output.text)
-            mesenge.show("已导出到"+source,5000)
+            mesenge.show("已导出到"+source,4000)
         }
         function save(){
+            var tx
+            if(a1.checked)tx=1
+            else if(a2.checked)tx=2
+            else tx=3
             var settingsData ={
                 "names": names,
-                "tx":a1.checked,
-                "n":nN.value
+                "tx":tx,
+                "n":nN.value,
+                "first":a3.first,
+                "top":top_btn.checked
             }
             var jsonString = JSON.stringify(settingsData, null, 4)
             file.source="./setting.json"
@@ -78,18 +100,162 @@ ApplicationWindow {
         return s
 
     }
+
     Window{
         id:full
         flags:Qt.WindowStaysOnTopHint
-        color: "#EE000000"
+        color: "#00000000"
         visible: false
-        Component.onCompleted: visible=false
+        Component.onCompleted: {
+            for(var i=0;i<names.length;i++)
+            {
+                gcs.push(gCard.createObject(full))
+                gcs[i].visible=false
+
+            }
+        }
+        Rectangle{
+            id:full_back
+            anchors.fill: parent
+            opacity:0
+            Behavior on opacity {enabled:true; NumberAnimation { easing.type: Easing.OutBack; duration: 600 } }
+            color: "#EF000000"
+            Text{
+                id:full_te
+                text:"单击任意位置继续"
+                Behavior on opacity {enabled:true; NumberAnimation {duration: 1200 } }
+                color: "#FFFFFF"
+                opacity: 0
+                font.pixelSize: 40
+                font.bold: true
+                anchors.centerIn: parent
+                anchors.verticalCenterOffset: parent.height/2-50
+                anchors.horizontalCenterOffset: parent.width/2-200
+            }
+        }
+        MouseArea{
+            anchors.fill: parent
+            z:99
+            onClicked: {
+                var a
+                if(full_timer.i<12)
+                    full_timer.i=11
+                else if(full_timer.i<50)
+                    full_timer.i=49
+                else if(full_timer.i<57)
+                    full_timer.i=56
+                full_timer.running=true
+            }
+        }
+
+        Component{
+            id:gCard
+            Image{
+                z:10
+                source:"qrc:/545b.svg"
+                property bool thise:false
+                property string text
+                Behavior on scale {enabled:true; NumberAnimation { easing.type: Easing.OutBack; duration: thise?1200:600 } }
+                Behavior on opacity {enabled:true; NumberAnimation { easing.type: Easing.OutBack; duration: thise?1200:600 } }
+                Behavior on anchors.verticalCenterOffset {enabled:true; NumberAnimation { easing.type: Easing.OutBack; duration: thise?1200:600 } }
+                Behavior on anchors.horizontalCenterOffset {enabled:true; NumberAnimation { easing.type: Easing.OutBack; duration: thise?1200:600 } }
+                Text{
+                    text:parent.text
+                    font.pixelSize: 170
+                    font.bold: true
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: -30
+                }
+            }
+        }
+        property var gcc
+        property var gcs:[]
+        Item{
+            id:ro
+            width: parent.width
+            height: parent.width
+            anchors.centerIn: parent
+            scale: 0.0
+            property bool thise:true
+            Behavior on scale {enabled:ro.thise; NumberAnimation {duration: 1200 } }
+            Behavior on opacity {enabled:ro.thise; NumberAnimation { easing.type: Easing.OutBack; duration: 4800 } }
+            RadialGradient {
+                anchors.fill: parent
+                gradient: Gradient {
+                    GradientStop { position: 0; color: "#FFFFFFFF" }
+                    GradientStop { position: 0.5; color: "#00FFFFFF" }
+                }
+            }
+        }
+        Timer{
+            id:full_timer
+            interval: 100
+            repeat: true
+            property int i:0
+            onTriggered: {
+                i++
+                switch(i){
+                case 12:
+                    full.gcc.visible=true
+                    full.gcc.thise=true
+                    full.gcc.anchors.verticalCenterOffset=0
+                    full.gcc.opacity=1
+                    full.gcc.scale=0.7
+                    ro.opacity=0
+                    break
+                case 18:
+                    full_te.opacity=0.8
+                    break
+                case 34:
+                    full_te.opacity=0
+                    break
+                case 46:
+                    i=17
+                    break
+                case 50:
+                    full.gcc.thise=false
+                    full.gcc.anchors.verticalCenterOffset=(Math.random() > 0.5 ? 1 : -1)*full.height/2*(1+Math.random())
+                    full.gcc.anchors.horizontalCenterOffset=(Math.random() > 0.5 ? 1 : -1)*full.width/2*(1+Math.random())
+                    full.gcc.opacity=0
+                    full.gcc.scale=0
+                    full_back.opacity=0
+                    full_te.opacity=0
+                    break
+                case 53:
+                    c1.finish(name)
+                    break
+                case 56:
+                    full.visible=false
+                    ro.scale=0
+                    ro.opacity=0
+                    full.gcc.destroy()
+                    running=false
+                }
+            }
+        }
+
         function startS(name){
-            visibility=Window.FullScreen
-            c1.finish(name)
+            full.visibility=Window.FullScreen
+            ro.thise=false
+            ro.scale=0
+            ro.opacity=0
+            gcc=gCard.createObject(full)
+            full_back.opacity=1
+            gcc.anchors.centerIn=gcc.parent
+            gcc.anchors.verticalCenterOffset=full.height/2
+            gcc.anchors.horizontalCenterOffset=0
+            gcc.visible=false
+            gcc.opacity=0
+            full_te.opacity=0
+            ro.thise=true
+            ro.opacity=1
+            ro.scale=2.5
+            gcc.scale=0
+            gcc.text=name
+            full_timer.i=0
+            full_timer.running=true
         }
     }
-
     Rectangle{
         anchors.fill: parent
         border.color: "#80808080"
@@ -112,6 +278,45 @@ ApplicationWindow {
                 y:2
                 text:window.title
                 font.pixelSize: 20
+            }
+            FontLoader {
+                    id: font5
+                    source: "qrc:/545.otf"  // 相对路径
+                }
+            DelButton{
+                x:window.width-126
+                y:0
+                width: 30
+                height: 30
+                text:"C"
+                colorBg: "#00000000"
+                colorBorder: "#00000000"
+                font.pixelSize: 25
+                padding: 0
+                topPadding: 8
+                font.family: font5.name
+                onClicked: {
+                    mesenge.show("打开设置配置文件",2000)
+                    file.openFile("./setting.json")
+                }
+            }
+            DelButton{
+                id:top_btn
+                x:window.width-96
+                y:0
+                width: 30
+                height: 30
+                checkable: true
+                checked: false
+                text:checked?"A":"B"
+                colorBg: "#00000000"
+                colorBorder: "#00000000"
+                font.pixelSize: 25
+                padding: 0
+                topPadding: 8
+                font.family: font5.name
+                onCheckedChanged: if(!start)mesenge.show(checked?"始终显示在最上层":"始终显示在最上层：关闭",2000)
+
             }
             DelButton{
                 x:window.width-66
@@ -145,7 +350,7 @@ ApplicationWindow {
                 }
             }
             Item{
-                width: window.width-66
+                width: window.width-126
                 height: 30
                 MouseArea {
                     anchors.fill: parent
@@ -410,9 +615,8 @@ ApplicationWindow {
                     output.text+=(sumn==1?"":"\n")+"["+sumn+"]"+name
                     if(output__.contentHeight>output__.height)output_.position=(output__.contentHeight-output__.height)/output__.contentHeight
                     enabled=true
-                    cn.enabled=true
+                    cn.enabled=cn.enabled=a3.checked?false:true
                 }
-
                 id:c1
                 x:0
                 y:0
@@ -426,7 +630,7 @@ ApplicationWindow {
                     enabled=false
                     cn.enabled=false
                     if(a3.checked)
-                        full.startS()
+                        full.startS(name)
                     else if(a1.checked)
                     {
                         txS.start()
@@ -441,7 +645,10 @@ ApplicationWindow {
                 y:0
                 width: 100
                 height: 30
-                text: "N连抽"
+                text: {
+                    var n=['一','二','三','四','五','六','七','八','九','十']
+                    return n[nN.value-1]+"连抽"
+                }
                 font.pixelSize: 20
                 function finish(){
                     for(var i=0;i<nN.value;i++)
@@ -450,11 +657,10 @@ ApplicationWindow {
                         output.text+=(sumn==1?"":"\n")+"["+sumn+"]"+nN_names[i]
                     }
                     if(output__.contentHeight>output__.height)output_.position=(output__.contentHeight-output__.height)/output__.contentHeight
-                    enabled=true
-                    cn.enabled=true
+                    enabled=a3.checked?false:true
+                    c1.enabled=true
                     nN.enabled=true
                 }
-
                 onClicked: {
                     if(nN.value>0)
                     {
@@ -466,15 +672,13 @@ ApplicationWindow {
                         if(nN.value<=names_.length)
                         {
                             enabled=false
-                            cn.enabled=false
+                            c1.enabled=false
                             nN.enabled=false
                             for(i=0;i<nN.value;i++)
                             {
                                 nN_names[i]=coul()
                             }
-                            if(a3.checked)
-                                full.startS()
-                            else if(a1.checked)
+                            if(a1.checked)
                             {
                                 txN.start()
                             }
@@ -539,6 +743,7 @@ ApplicationWindow {
                         {
                             a2.checked=false
                             a3.checked=false
+                            cn.enabled=true
                         }
                     }
                     onClicked: checked=true
@@ -557,6 +762,7 @@ ApplicationWindow {
                         {
                             a1.checked=false
                             a3.checked=false
+                            cn.enabled=true
                         }
                     }
                     onClicked: checked=true
@@ -567,14 +773,21 @@ ApplicationWindow {
                     height: 25
                     x:10
                     y:95
+                    checkable: true
                     type: checked ? 3 : 1
                     text: "超级特效"
+                    property bool first:true
                     onCheckedChanged: {
-
+                        a1.checked=false
+                        a2.checked=false
+                        cn.enabled=false
                     }
                     onClicked: {
-                        error.visible=true
-                        error.raise()
+                        if(first){
+                            first=false
+                            error.visible=true
+                            error.raise()
+                        }
                     }
                     Window{
                         id:error
@@ -588,7 +801,7 @@ ApplicationWindow {
                         maximumHeight: height
                         minimumWidth: width
                         maximumWidth: width
-                        title: "545抽号器>错误"
+                        title: "545抽号器>提示"
                         Rectangle{
                             anchors.fill: parent
                             border.color: "#80808080"
@@ -658,7 +871,7 @@ ApplicationWindow {
                                         x:20
                                         y:25
                                         font.pixelSize: 20
-                                        text:"内容制作中...."
+                                        text:"超级特效暂不支持多连抽\n相关内容制作（等待假期）中..."
                                     }
 
                                     Item{
@@ -708,3 +921,4 @@ ApplicationWindow {
         }
     }
 }
+

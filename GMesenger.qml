@@ -2,7 +2,7 @@ import QtQuick
 
 Rectangle {
     id:root
-    width: 200
+    width: text_.width+20
     height: 40
     radius: 4
     border.width: 1
@@ -16,11 +16,6 @@ Rectangle {
         root.focus=true
         timer.running=true
     }
-    onActiveFocusChanged: {
-        if(!root.activeFocus)
-            enabled=false
-    }
-
     Timer{
         id:timer
         running: false

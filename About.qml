@@ -92,7 +92,7 @@ Window{
                         x:70
                         y:20
                         font.pixelSize: 20
-                        text:"545Rand v0.1"
+                        text:"545Rand v0.2"
                     }
                     Text {
                         x:70
